@@ -1,0 +1,633 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>FitMood — Diet & Mood Tracker (Demo)</title>
+<style>
+  :root{
+    --bg:#0f1724; --card:#0b1220; --accent:#00f29d; --muted:#9aa6b2;
+    --glass: rgba(255,255,255,0.03);
+    --glass-2: rgba(255,255,255,0.02);
+    --glass-3: rgba(255,255,255,0.04);
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:
+    radial-gradient(800px 400px at 10% 10%, rgba(0,242,157,0.06), transparent 5%),
+    radial-gradient(600px 300px at 90% 90%, rgba(0,154,255,0.04), transparent 10%),
+    var(--bg); color:#e6eef3;}
+  a{color:var(--accent)}
+  .container{max-width:1100px;margin:28px auto;padding:20px;display:grid;grid-template-columns:1fr;gap:18px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .logo{display:flex;align-items:center;gap:12px}
+  .logo .mark{width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#00aaff);display:grid;place-items:center;font-weight:800;color:#012;text-shadow:0 1px 0 rgba(255,255,255,0.06)}
+  h1{margin:0;font-size:20px}
+  p.lead{margin:0;color:var(--muted);font-size:13px}
+  .card{background:linear-gradient(180deg,var(--glass),var(--glass-2));border-radius:14px;padding:18px;box-shadow:0 6px 24px rgba(2,6,23,0.6);backdrop-filter: blur(6px);border:1px solid rgba(255,255,255,0.03)}
+  .flex{display:flex;gap:12px;align-items:center}
+  .muted{color:var(--muted);font-size:13px}
+  /* forms */
+  .auth-wrap{display:grid;grid-template-columns:1fr 380px;gap:18px}
+  .panel{padding:20px;border-radius:12px}
+  form{display:grid;gap:12px}
+  label{font-size:13px;color:var(--muted)}
+  input[type="text"], input[type="email"], input[type="password"], textarea, select{
+    background:transparent;border:1px solid rgba(255,255,255,0.04);padding:10px;border-radius:8px;color:#e6eef3;outline:none;
+  }
+  input:focus, textarea:focus, select:focus{box-shadow:0 6px 20px rgba(0,0,0,0.6);border-color:rgba(0,242,157,0.16)}
+  .btn{padding:10px 14px;border-radius:10px;border:0;background:linear-gradient(90deg,var(--accent),#00aaff);color:#012;font-weight:700;cursor:pointer}
+  .ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);color:var(--accent)}
+  .small{font-size:13px;padding:8px 10px}
+  .link-like{background:transparent;border:0;color:var(--accent);cursor:pointer;font-weight:700}
+  .right-col{min-height:320px;display:flex;flex-direction:column;gap:12px}
+  .step{display:none;animation:fadeIn .36s ease both;}
+  .step.active{display:block}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .otp-box{display:flex;gap:8px;align-items:center}
+  .otp-view{background:rgba(255,255,255,0.02);padding:10px;border-radius:8px;font-weight:700;color:var(--muted);font-size:14px}
+  /* dashboard */
+  .dash-grid{display:grid;grid-template-columns:320px 1fr;gap:18px}
+  .profile-mini{display:flex;gap:12px;align-items:center}
+  .avatar{width:72px;height:72px;border-radius:14px;background:linear-gradient(135deg,#15324a,#052a1f);display:grid;place-items:center;font-weight:900;color:var(--accent);font-size:22px}
+  .stat{display:flex;gap:8px;align-items:center}
+  .tabs{display:flex;gap:8px;padding:8px;background:var(--glass-3);border-radius:10px}
+  .tab{padding:8px 10px;border-radius:8px;cursor:pointer}
+  .tab.active{background:linear-gradient(90deg,rgba(0,242,157,0.1),rgba(0,170,255,0.06));border:1px solid rgba(0,242,157,0.08)}
+  .post-card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));padding:12px;border-radius:12px;display:grid;gap:8px}
+  .post-img{width:100%;height:220px;background:#042;object-fit:cover;border-radius:10px}
+  .mood-emoji{font-size:20px}
+  .follow-list{display:flex;flex-direction:column;gap:8px;max-height:260px;overflow:auto;padding-right:6px}
+  .user-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px;border-radius:8px}
+  .user-meta{display:flex;gap:8px;align-items:center}
+  .pill{background:rgba(255,255,255,0.03);padding:6px 8px;border-radius:999px;font-size:13px}
+  .feed{display:grid;gap:12px}
+  .muted-small{color:var(--muted);font-size:12px}
+  /* responsive */
+  @media (max-width:980px){
+    .auth-wrap{grid-template-columns:1fr}
+    .dash-grid{grid-template-columns:1fr}
+  }
+  /* small animations */
+  .btn:active{transform:translateY(2px)}
+  .fade-left{animation:fadeLeft .36s ease both}
+  @keyframes fadeLeft{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div class="logo">
+      <div class="mark">FM</div>
+      <div>
+        <h1>FitMood</h1>
+        <p class="lead">Diet & mood tracking — build healthy habits, share recipes, follow friends.</p>
+      </div>
+    </div>
+    <div class="muted">Demo — frontend-only • localStorage</div>
+  </header>
+
+  <!-- AUTH BLOCK -->
+  <div id="auth" class="card panel">
+    <div class="auth-wrap">
+      <div>
+        <h2 style="margin:0 0 6px 0">Create account</h2>
+        <p class="muted">Sign up with email and verify with a one-time code (demo simulated).</p>
+
+        <!-- Registration steps -->
+        <div id="reg-steps">
+          <div id="step-email" class="step active">
+            <form id="emailForm">
+              <label>Email</label>
+              <input required id="reg-email" type="email" placeholder="you@domain.com" />
+              <div style="display:flex;gap:8px">
+                <button class="btn" type="submit">Send OTP</button>
+                <button id="toLoginFromReg" type="button" class="ghost small">Already have account → Login</button>
+              </div>
+            </form>
+          </div>
+
+          <div id="step-otp" class="step">
+            <div class="otp-box">
+              <div style="flex:1">
+                <label>Enter OTP</label>
+                <input id="reg-otp" type="text" placeholder="6-digit code" />
+                <div style="display:flex;gap:8px;margin-top:8px">
+                  <button id="verifyOtpBtn" class="btn">Verify OTP</button>
+                  <button id="resendOtp" class="ghost small">Resend</button>
+                </div>
+              </div>
+              <div style="width:150px;text-align:right">
+                <div class="otp-view" id="demoOtpView">Demo OTP: —</div>
+                <div class="muted-small" style="margin-top:8px">OTP is simulated in this demo.</div>
+              </div>
+            </div>
+          </div>
+
+          <div id="step-create" class="step">
+            <form id="createForm">
+              <label>Choose username</label>
+              <input id="reg-username" type="text" required placeholder="username (unique)" />
+              <label>Create password</label>
+              <input id="reg-password" type="password" required placeholder="password" />
+              <div style="display:flex;gap:8px">
+                <button class="btn" type="submit">Create account</button>
+                <button id="cancelReg" type="button" class="ghost small">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <hr style="border:none;border-top:1px solid rgba(255,255,255,0.03);margin:18px 0">
+
+        <div class="muted" style="font-size:13px">Or login if you already have an account</div>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button id="toLogin" class="ghost">Go to Login</button>
+        </div>
+      </div>
+
+      <div class="right-col card">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <h3 style="margin:0">Welcome to FitMood</h3>
+            <div class="muted">Track meals, moods, photos, recipes — follow friends for motivation.</div>
+          </div>
+          <div class="pill">Fitness theme</div>
+        </div>
+
+        <div style="margin-top:12px">
+          <h4 style="margin:0 0 6px 0">Why FitMood?</h4>
+          <ul style="margin:0 0 0 18px;color:var(--muted)">
+            <li>Notice how diet affects your mood</li>
+            <li>Save recipes and photos of meals</li>
+            <li>Follow friends — learn & share ideas</li>
+            <li>Privacy toggle for posts</li>
+          </ul>
+        </div>
+
+        <div style="margin-top:auto" class="muted-small">Tip: This demo stores data in your browser only.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOGIN CARD (hidden by default) -->
+  <div id="loginCard" class="card panel" style="display:none">
+    <h2 style="margin:0 0 6px 0">Login</h2>
+    <p class="muted">Sign in with username or email</p>
+    <form id="loginForm">
+      <label>Username or Email</label>
+      <input id="login-user" type="text" placeholder="username or email" required />
+      <label>Password</label>
+      <input id="login-pass" type="password" placeholder="password" required />
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="btn" type="submit">Login</button>
+        <button id="backToReg" type="button" class="ghost">Back to Register</button>
+      </div>
+      <div id="loginError" style="color:#ff8a8a;margin-top:8px;display:none">Invalid credentials</div>
+    </form>
+  </div>
+
+  <!-- DASHBOARD (hidden until login) -->
+  <div id="dashboard" class="card" style="display:none">
+    <div class="dash-grid">
+      <div class="panel" style="display:flex;flex-direction:column;gap:12px">
+        <div class="profile-mini">
+          <div class="avatar" id="profileAvatar">U</div>
+          <div>
+            <div id="profileName" style="font-weight:800">Username</div>
+            <div class="muted-small" id="profileEmail">email@example.com</div>
+          </div>
+        </div>
+
+        <div class="tabs">
+          <div id="tab-create" class="tab active">Create post</div>
+          <div id="tab-my" class="tab">My posts</div>
+          <div id="tab-feed" class="tab">Feed</div>
+        </div>
+
+        <!-- create -->
+        <div id="createBox" class="post-card">
+          <label>What did you eat today?</label>
+          <textarea id="post-desc" rows="3" placeholder="Describe your meal..."></textarea>
+          <label>Recipe (optional)</label>
+          <textarea id="post-recipe" rows="2" placeholder="Recipe or steps..."></textarea>
+          <label>Mood</label>
+          <select id="post-mood">
+            <option value="🙂">🙂 Good</option>
+            <option value="😌">😌 Calm</option>
+            <option value="🤢">🤢 Bad</option>
+            <option value="😴">😴 Tired</option>
+            <option value="🤩">🤩 Energetic</option>
+          </select>
+          <label>Upload photo</label>
+          <input id="post-file" type="file" accept="image/*" />
+          <div style="display:flex;gap:8px;align-items:center">
+            <label class="muted-small">Privacy</label>
+            <button id="privacyToggle" class="pill">Public</button>
+            <div style="flex:1"></div>
+            <button id="createPostBtn" class="btn">Post</button>
+          </div>
+          <div id="previewWrap" style="display:none;margin-top:8px">
+            <img id="previewImage" class="post-img" alt="preview" />
+          </div>
+        </div>
+
+        <div style="margin-top:12px" class="card">
+          <h4 style="margin:0 0 6px 0">Find & Follow</h4>
+          <div class="follow-list" id="userList"></div>
+        </div>
+
+        <div style="margin-top:auto" class="muted-small">You can follow others and see their public posts in your feed.</div>
+      </div>
+
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h3 style="margin:0">Feed</h3>
+          <div class="muted-small">Only public posts by followed users + your posts</div>
+        </div>
+
+        <div id="feedArea" style="margin-top:12px" class="feed"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* -----------------------
+  Simple frontend-only app
+  Data shape in localStorage:
+  - dmt_users: [ {id, username, email, password, followers:[], following:[], posts: [] } ]
+  - dmt_current: username (logged in)
+  - dmt_otps: {email: otp} // ephemeral
+-------------------------- */
+
+const qs = s => document.querySelector(s);
+const qsa = s => document.querySelectorAll(s);
+
+function uid(len=8){ return Math.random().toString(36).slice(2,2+len) }
+
+function readUsers(){
+  try { return JSON.parse(localStorage.getItem('dmt_users')||'[]') } catch(e){ return [] }
+}
+function writeUsers(arr){ localStorage.setItem('dmt_users', JSON.stringify(arr)) }
+function setCurrent(u){ localStorage.setItem('dmt_current', u) }
+function getCurrent(){ return localStorage.getItem('dmt_current') }
+
+function findUserByUsername(u){ return readUsers().find(x => x.username.toLowerCase() === u.toLowerCase()) }
+function findUserByEmail(e){ return readUsers().find(x => x.email.toLowerCase() === e.toLowerCase()) }
+function findUserById(id){ return readUsers().find(x => x.id === id) }
+
+function show(el){ el.style.display = ''; el.classList && el.classList.add('active') }
+function hide(el){ el.style.display = 'none'; el.classList && el.classList.remove('active') }
+
+/* ---------- Registration flow ---------- */
+let regEmail = '', currentOtp = null;
+qs('#emailForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  const email = qs('#reg-email').value.trim().toLowerCase();
+  if(!email){ alert('Enter an email'); return }
+  if(findUserByEmail(email)){ alert('Email already used. Please login instead.'); return }
+  // generate OTP
+  currentOtp = (''+Math.floor(100000 + Math.random()*900000));
+  regEmail = email;
+  // store otp map in localStorage (ephemeral)
+  const otps = JSON.parse(localStorage.getItem('dmt_otps')||'{}');
+  otps[email] = currentOtp;
+  localStorage.setItem('dmt_otps', JSON.stringify(otps));
+  // show step 2
+  qs('#demoOtpView').textContent = 'Demo OTP: ' + currentOtp;
+  qsAllSteps().forEach(s=>s.classList.remove('active'));
+  qs('#step-otp').classList.add('active');
+});
+
+qs('#resendOtp').addEventListener('click', ()=>{
+  // simulate resend by re-creating OTP
+  if(!regEmail){ alert('Start by entering your email'); return }
+  currentOtp = (''+Math.floor(100000 + Math.random()*900000));
+  const otps = JSON.parse(localStorage.getItem('dmt_otps')||'{}');
+  otps[regEmail] = currentOtp;
+  localStorage.setItem('dmt_otps', JSON.stringify(otps));
+  qs('#demoOtpView').textContent = 'Demo OTP: ' + currentOtp;
+  alert('OTP resent (demo, shown on the right).');
+});
+
+qs('#verifyOtpBtn').addEventListener('click', ()=>{
+  const entered = qs('#reg-otp').value.trim();
+  const otps = JSON.parse(localStorage.getItem('dmt_otps')||'{}');
+  if(!regEmail){ alert('Start with email first'); return }
+  if(otps[regEmail] && otps[regEmail] === entered){
+    // clear otp and go to create account
+    delete otps[regEmail];
+    localStorage.setItem('dmt_otps', JSON.stringify(otps));
+    qsAllSteps().forEach(s=>s.classList.remove('active'));
+    qs('#step-create').classList.add('active');
+  } else {
+    alert('Invalid OTP (demo). Check the "Demo OTP" box.');
+  }
+});
+
+qs('#createForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  const username = qs('#reg-username').value.trim();
+  const password = qs('#reg-password').value;
+  if(!username || !password) return alert('Fill username & password');
+  if(findUserByUsername(username)) return alert('Username already exists');
+  const users = readUsers();
+  users.push({
+    id: uid(10),
+    username,
+    email: regEmail,
+    password,
+    followers: [],
+    following: [],
+    posts: []
+  });
+  writeUsers(users);
+  alert('Account created! Please login.');
+  // reset reg UI
+  qs('#reg-email').value = ''; qs('#reg-otp').value=''; qs('#reg-username').value=''; qs('#reg-password').value='';
+  showLoginCard();
+});
+
+qs('#cancelReg').addEventListener('click', ()=>{
+  qsAllSteps().forEach(s=>s.classList.remove('active'));
+  qs('#step-email').classList.add('active');
+  localStorage.removeItem('dmt_otps');
+  regEmail = ''; currentOtp = null;
+});
+
+function qsAllSteps(){ return Array.from(document.querySelectorAll('#reg-steps .step')) }
+
+/* ---------- Login ---------- */
+qs('#toLogin').addEventListener('click', showLoginCard);
+qs('#toLoginFromReg').addEventListener('click', showLoginCard);
+qs('#backToReg').addEventListener('click', showRegCard);
+
+function showLoginCard(){
+  qs('#auth').style.display='none';
+  qs('#loginCard').style.display='';
+  window.scrollTo(0,0);
+}
+function showRegCard(){
+  qs('#auth').style.display='';
+  qs('#loginCard').style.display='none';
+  qsAllSteps().forEach(s=>s.classList.remove('active'));
+  qs('#step-email').classList.add('active');
+  window.scrollTo(0,0);
+}
+
+qs('#loginForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  const who = qs('#login-user').value.trim();
+  const pass = qs('#login-pass').value;
+  let user = null;
+  if(who.includes('@')) user = findUserByEmail(who);
+  else user = findUserByUsername(who);
+  if(!user || user.password !== pass){
+    qs('#loginError').style.display='block';
+    return;
+  }
+  qs('#loginError').style.display='none';
+  setCurrent(user.username);
+  openDashboard();
+});
+
+/* ---------- Dashboard ---------- */
+function openDashboard(){
+  qs('#auth').style.display='none';
+  qs('#loginCard').style.display='none';
+  qs('#dashboard').style.display='';
+  renderProfile();
+  renderUserList();
+  renderFeed();
+}
+
+function renderProfile(){
+  const current = getCurrent();
+  if(!current) return;
+  const u = findUserByUsername(current);
+  if(!u) return;
+  qs('#profileName').textContent = u.username;
+  qs('#profileEmail').textContent = u.email;
+  qs('#profileAvatar').textContent = u.username.slice(0,2).toUpperCase();
+}
+
+/* tabs */
+qs('#tab-create').addEventListener('click', ()=>{
+  setActiveTab('create'); renderFeed();
+});
+qs('#tab-my').addEventListener('click', ()=>{ setActiveTab('my'); renderMyPosts(); });
+qs('#tab-feed').addEventListener('click', ()=>{ setActiveTab('feed'); renderFeed(); });
+
+function setActiveTab(k){
+  qsa('.tab').forEach(t=>t.classList.remove('active'));
+  if(k==='create') qs('#tab-create').classList.add('active');
+  if(k==='my') qs('#tab-my').classList.add('active');
+  if(k==='feed') qs('#tab-feed').classList.add('active');
+}
+
+/* create post */
+let postPrivacy = 'Public';
+qs('#privacyToggle').addEventListener('click', ()=>{
+  postPrivacy = (postPrivacy==='Public') ? 'Private' : 'Public';
+  qs('#privacyToggle').textContent = postPrivacy;
+});
+
+let lastPreview = null;
+qs('#post-file').addEventListener('change', async (ev)=>{
+  const file = ev.target.files[0];
+  if(!file) return;
+  if(file.size > 2_000_000) {
+    alert('Image is big — try <2MB for demo stability');
+  }
+  const b64 = await fileToBase64(file);
+  qs('#previewWrap').style.display='';
+  qs('#previewImage').src = b64;
+  lastPreview = b64;
+});
+
+async function fileToBase64(file){
+  return new Promise(res=>{
+    const r = new FileReader();
+    r.onload = ()=>res(r.result);
+    r.readAsDataURL(file);
+  });
+}
+
+qs('#createPostBtn').addEventListener('click', ()=>{
+  const desc = qs('#post-desc').value.trim();
+  const recipe = qs('#post-recipe').value.trim();
+  const mood = qs('#post-mood').value;
+  const img = lastPreview;
+  const current = getCurrent();
+  if(!current) return alert('No user logged in');
+  if(!desc && !img && !recipe) return alert('Add at least a description, recipe, or photo');
+  const users = readUsers();
+  const uidx = users.findIndex(x => x.username === current);
+  if(uidx < 0) return alert('User not found');
+  const post = {
+    id: uid(10),
+    user: current,
+    created: new Date().toISOString(),
+    desc, recipe, mood, img,
+    private: (postPrivacy === 'Private')
+  };
+  users[uidx].posts.unshift(post);
+  writeUsers(users);
+  // clear
+  qs('#post-desc').value=''; qs('#post-recipe').value=''; qs('#post-file').value=''; lastPreview=null; qs('#previewWrap').style.display='none';
+  alert('Posted!');
+  renderMyPosts();
+  renderFeed();
+  renderUserList();
+});
+
+/* render follow list */
+function renderUserList(){
+  const all = readUsers();
+  const current = getCurrent();
+  const list = qs('#userList'); list.innerHTML = '';
+  if(!current) return;
+  const me = findUserByUsername(current);
+  all.filter(u => u.username !== current).forEach(u=>{
+    const row = document.createElement('div');
+    row.className = 'user-row';
+    row.innerHTML = `
+      <div class="user-meta"><div style="width:44px;height:44px;border-radius:8px;background:#06161a;display:grid;place-items:center;font-weight:800">${u.username.slice(0,2).toUpperCase()}</div>
+      <div style="margin-left:8px"><div style="font-weight:700">${u.username}</div><div class="muted-small">${u.email}</div></div></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <div class="muted-small">${u.posts.length} posts</div>
+        <button class="pill">${me.following.includes(u.username) ? 'Following' : 'Follow'}</button>
+      </div>
+    `;
+    const btn = row.querySelector('button');
+    btn.addEventListener('click', ()=>{
+      toggleFollow(me.username, u.username);
+      renderUserList();
+      renderFeed();
+    });
+    list.appendChild(row);
+  });
+}
+
+function toggleFollow(my, other){
+  const users = readUsers();
+  const me = users.find(u => u.username === my);
+  const them = users.find(u => u.username === other);
+  if(!me || !them) return;
+  if(me.following.includes(other)){
+    me.following = me.following.filter(x=>x!==other);
+    them.followers = them.followers.filter(x=>x!==my);
+  } else {
+    me.following.push(other);
+    them.followers.push(my);
+  }
+  writeUsers(users);
+}
+
+/* render my posts */
+function renderMyPosts(){
+  const current = getCurrent(); if(!current) return;
+  const me = findUserByUsername(current);
+  const area = qs('#feedArea'); area.innerHTML='';
+  if(!me.posts.length) area.innerHTML = '<div class="muted-small">No posts yet — create one!</div>';
+  me.posts.forEach(p => area.appendChild(makePostCard(p, me.username)));
+}
+
+/* render feed: my posts + public posts from following */
+function renderFeed(){
+  const current = getCurrent(); if(!current) return;
+  const me = findUserByUsername(current);
+  const users = readUsers();
+  const area = qs('#feedArea'); area.innerHTML='';
+  // gather: my posts + public posts from following
+  let posts = [];
+  const mine = me.posts || [];
+  posts.push(...mine.map(x => ({...x, owner: me.username})));
+  users.filter(u => me.following.includes(u.username)).forEach(u=>{
+    (u.posts||[]).filter(p => !p.private).forEach(p=>{
+      posts.push({...p, owner: u.username});
+    })
+  });
+  // sort by date
+  posts.sort((a,b) => new Date(b.created) - new Date(a.created));
+  if(!posts.length) area.innerHTML = '<div class="muted-small">No posts in feed yet — follow people or create a post!</div>';
+  posts.forEach(p=> area.appendChild(makePostCard(p, p.owner)));
+}
+
+/* create post card element */
+function makePostCard(p, owner){
+  const el = document.createElement('div');
+  el.className = 'post-card fade-left';
+  const ownerObj = findUserByUsername(owner);
+  const avatar = owner.slice(0,2).toUpperCase();
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="display:flex;gap:12px;align-items:center">
+        <div style="width:44px;height:44px;border-radius:8px;background:#071f20;display:grid;place-items:center;font-weight:800">${avatar}</div>
+        <div>
+          <div style="font-weight:800">${owner}</div>
+          <div class="muted-small">${new Date(p.created).toLocaleString()}</div>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div class="muted-small">${p.private ? 'Private' : 'Public'}</div>
+        <div class="muted-small">${p.mood || ''}</div>
+      </div>
+    </div>
+    <div style="margin-top:8px">${escapeHtml(p.desc || '')}</div>
+    ${p.recipe ? `<div style="margin-top:8px;padding:10px;border-radius:8px;background:rgba(255,255,255,0.02)"><strong>Recipe:</strong><div style="margin-top:6px">${escapeHtml(p.recipe)}</div></div>` : ''}
+    ${p.img ? `<img src="${p.img}" class="post-img" />` : ''}
+  `;
+  return el;
+}
+
+/* small helper */
+function escapeHtml(s){ return s ? s.replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;') : '' }
+
+/* initial demo: if no users exist, create two sample accounts */
+(function seed(){
+  const users = readUsers();
+  if(users.length === 0){
+    users.push({
+      id: uid(10),
+      username:'alex',
+      email:'alex@example.com',
+      password:'pass123',
+      followers:[], following:[], posts:[{
+        id:uid(8), user:'alex', created:new Date().toISOString(), desc:'Protein pancakes + fruit. Felt energetic!','recipe':'Mix oats, banana, eggs, cook on pan.', mood:'🤩', img:null, private:false
+      }]
+    });
+    users.push({
+      id: uid(10),
+      username:'maya',
+      email:'maya@example.com',
+      password:'password',
+      followers:[], following:[], posts:[{
+        id:uid(8), user:'maya', created:new Date(Date.now()-1000*60*60*24).toISOString(), desc:'Green salad & grilled tofu. Calm and satisfied.', recipe:'Chop greens, grill tofu, add dressing.', mood:'😌', img:null, private:false
+      }]
+    });
+    writeUsers(users);
+  }
+})();
+
+/* helpers for showing/hiding auth UI */
+(function init(){
+  qsAllSteps().forEach(s=>s.classList.remove('active'));
+  qs('#step-email').classList.add('active');
+})();
+
+/* utility for basic nav by keyboard for demo */
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Escape'){
+    // logout
+    if(getCurrent()){
+      if(confirm('Logout?')){ localStorage.removeItem('dmt_current'); location.reload(); }
+    }
+  }
+});
+
+</script>
+</body>
+</html>
